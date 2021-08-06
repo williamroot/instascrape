@@ -28,6 +28,10 @@ def parse_data_from_json(json_dict, map_dict, default_value=float('nan')):
 
         # Loop through all steps into the JSON dict that will give us our data
         first_step = steps_to_value.popleft()
+        # FIXME: we need a better way to identify when a post has no caption
+        if key == 'caption' and json_dict.get('owner_username'):
+            return_data[key] = default_value
+            continue
         try:
             value = json_dict[first_step]
         except KeyError:
