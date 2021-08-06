@@ -15,12 +15,14 @@ from instascrape.core.json_algos import _JSONTree, _parse_json_str
 
 JSONDict = Dict[str, Any]
 
+
 def parse_data_from_json(json_dict, map_dict, default_value=float('nan')):
     """
     Parse data from a JSON dictionary using a mapping dictionary that tells
     the program how to parse the data
     """
     return_data = {}
+
     for key in map_dict:
         steps_to_value = map_dict[key]
 
@@ -36,6 +38,7 @@ def parse_data_from_json(json_dict, map_dict, default_value=float('nan')):
         finally:
             return_data[key] = value
     return return_data
+
 
 def flatten_dict(json_dict: JSONDict) -> JSONDict:
     """
@@ -63,7 +66,10 @@ def flatten_dict(json_dict: JSONDict) -> JSONDict:
         flattened_dict[new_key] = list(leaf_node.json_data.values())[0]
     return flattened_dict
 
-def json_from_html(source: Union[str, "BeautifulSoup"], as_dict: bool = True, flatten=False) -> Union[JSONDict, str]:
+
+def json_from_html(
+    source: Union[str, "BeautifulSoup"], as_dict: bool = True, flatten=False
+) -> Union[JSONDict, str]:
     """
     Return JSON data parsed from Instagram source HTML
 
@@ -87,6 +93,7 @@ def json_from_html(source: Union[str, "BeautifulSoup"], as_dict: bool = True, fl
     json_data = json_from_soup(source=soup, as_dict=as_dict, flatten=flatten)
     return json_data
 
+
 def json_from_soup(source, as_dict: bool = True, flatten=False):
     json_data = _parse_json_str(source=source)
 
@@ -96,6 +103,7 @@ def json_from_soup(source, as_dict: bool = True, flatten=False):
         json_data = [flatten_dict(json_dict) for json_dict in json_data]
 
     return json_data
+
 
 def determine_json_type(json_data: Union[JSONDict, str]) -> str:
     """
@@ -120,13 +128,14 @@ def determine_json_type(json_data: Union[JSONDict, str]) -> str:
         instagram_type = "Inconclusive"
     return instagram_type
 
+
 def json_from_url(
     url: str,
     as_dict: bool = True,
     headers={
         "user-agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Mobile Safari/537.36 Edg/87.0.664.57"
     },
-    flatten=False
+    flatten=False,
 ) -> Union[JSONDict, str]:
     """
     Return JSON data parsed from a provided Instagram URL
@@ -153,18 +162,18 @@ def json_from_url(
 
 
 def scrape_posts(
-        posts: List["Post"],
-        session: requests.Session = None,
-        webdriver: "selenium.webdriver.chrome.webdriver.WebDriver" = None,
-        limit: Union[int, datetime.datetime] = None,
-        headers: dict = {
-            "user-agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Mobile Safari/537.36 Edg/87.0.664.57"
-        },
-        pause: int = 5,
-        on_exception: str = "raise",
-        silent: bool = True,
-        inplace: bool = False
-    ):
+    posts: List["Post"],
+    session: requests.Session = None,
+    webdriver: "selenium.webdriver.chrome.webdriver.WebDriver" = None,
+    limit: Union[int, datetime.datetime] = None,
+    headers: dict = {
+        "user-agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Mobile Safari/537.36 Edg/87.0.664.57"
+    },
+    pause: int = 5,
+    on_exception: str = "raise",
+    silent: bool = True,
+    inplace: bool = False,
+):
 
     # Default setup
     if not inplace:
@@ -203,12 +212,15 @@ def scrape_posts(
 
     return scraped_posts, unscraped_posts if not inplace else None
 
+
 def _stop_scraping(limit, post, i):
     stop = False
     if isinstance(limit, int):
         if i == limit - 1:
             stop = True
-    elif (isinstance(limit, datetime.datetime) or isinstance(limit, datetime.date)):
+    elif isinstance(limit, datetime.datetime) or isinstance(
+        limit, datetime.date
+    ):
         if post.upload_date <= limit:
             stop = True
     return stop

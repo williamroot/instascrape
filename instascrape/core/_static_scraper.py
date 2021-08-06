@@ -13,12 +13,22 @@ import warnings
 import requests
 from bs4 import BeautifulSoup
 
-from instascrape.scrapers.scrape_tools import parse_data_from_json, determine_json_type, flatten_dict, json_from_soup
-from instascrape.exceptions.exceptions import InstagramLoginRedirectError, MissingSessionIDWarning, MissingCookiesWarning
+from instascrape.scrapers.scrape_tools import (
+    parse_data_from_json,
+    determine_json_type,
+    flatten_dict,
+    json_from_soup,
+)
+from instascrape.exceptions.exceptions import (
+    InstagramLoginRedirectError,
+    MissingSessionIDWarning,
+    MissingCookiesWarning,
+)
 
 # pylint: disable=no-member
 
 JSONDict = Dict[str, Any]
+
 
 class _StaticHtmlScraper(ABC):
     """
@@ -79,7 +89,7 @@ class _StaticHtmlScraper(ABC):
         },
         inplace=True,
         session=None,
-        webdriver=None
+        webdriver=None,
     ) -> None:
         """
         Scrape data from the source
@@ -128,40 +138,43 @@ class _StaticHtmlScraper(ABC):
                 if "sessionid" not in headers["cookie"]:
                     warnings.warn(
                         "Session ID not in cookies! It's recommended you pass a valid sessionid otherwise Instagram will likely redirect you to their login page.",
-                        MissingSessionIDWarning
+                        MissingSessionIDWarning,
                     )
             except KeyError:
                 warnings.warn(
                     "Request header does not contain cookies! It's recommended you pass at least a valid sessionid otherwise Instagram will likely redirect you to their login page.",
-                    MissingCookiesWarning
-                    )
+                    MissingCookiesWarning,
+                )
 
         # If the passed source was already an object, construct data from
         # source else parse it
         if isinstance(self.source, type(self)):
             scraped_dict = self.source.to_dict()
         else:
-            return_data = self._get_json_from_source(self.source, headers=headers, session=session)
+            return_data = self._get_json_from_source(
+                self.source, headers=headers, session=session
+            )
             flat_json_dict = flatten_dict(return_data["json_dict"])
 
-            #HACK: patch mapping to fix the profile pic scrape when a sessionid is present
+            # HACK: patch mapping to fix the profile pic scrape when a sessionid is present
             try:
                 if "sessionid" in headers["cookie"]:
-                    mapping["profile_pic_url"] = deque(["user_profile_pic_url"])
-                    mapping["profile_pic_url_hd"] = deque(["user_profile_pic_url_hd"])
+                    mapping["profile_pic_url"] = deque(
+                        ["user_profile_pic_url"]
+                    )
+                    mapping["profile_pic_url_hd"] = deque(
+                        ["user_profile_pic_url_hd"]
+                    )
             except KeyError:
                 pass
 
             scraped_dict = parse_data_from_json(
-                json_dict=flat_json_dict,
-                map_dict=mapping,
+                json_dict=flat_json_dict, map_dict=mapping,
             )
         return_data["scrape_timestamp"] = datetime.datetime.now()
         return_data["flat_json_dict"] = flat_json_dict
         return_instance = self._load_into_namespace(
-                            scraped_dict=scraped_dict,
-                            return_data=return_data,
-                            inplace=inplace
+            scraped_dict=scraped_dict, return_data=return_data, inplace=inplace
         )
         return None if return_instance is self else return_instance
 
@@ -181,7 +194,11 @@ class _StaticHtmlScraper(ABC):
             Dictionary containing the scraped data
         """
         data_dict = (
-            {key: val for key, val in self.__dict__.items() if key not in self._METADATA_KEYS}
+            {
+                key: val
+                for key, val in self.__dict__.items()
+                if key not in self._METADATA_KEYS
+            }
             if not metadata
             else self.__dict__
         )
@@ -218,10 +235,15 @@ class _StaticHtmlScraper(ABC):
     def _url_from_suburl(self, suburl: str) -> str:
         pass
 
-    def _get_json_from_source(self, source: Any, headers: dict, session: requests.Session) -> JSONDict:
+    def _get_json_from_source(
+        self, source: Any, headers: dict, session: requests.Session
+    ) -> JSONDict:
         """Parses the JSON data out from the source based on what type the source is"""
         initial_type = True
         return_data = {"source": self.source}
+        # import ipdb
+        #
+        # ipdb.set_trace()
         if isinstance(source, str):
             source_type = self._determine_string_type(source)
         elif isinstance(source, dict):
@@ -241,7 +263,9 @@ class _StaticHtmlScraper(ABC):
         if source_type == "url":
             if initial_type:
                 url = self.source
-            html = self._html_from_url(url=url, headers=headers, session=session)
+            html = self._html_from_url(
+                url=url, headers=headers, session=session
+            )
             source_type = "html"
             initial_type = False
             return_data["html"] = html
@@ -268,7 +292,9 @@ class _StaticHtmlScraper(ABC):
 
         return return_data
 
-    def _load_into_namespace(self, scraped_dict: dict, return_data, inplace) -> None:
+    def _load_into_namespace(
+        self, scraped_dict: dict, return_data, inplace
+    ) -> None:
         """Loop through the scraped dictionary and set them as instance attr"""
         instance = self if inplace else type(self)(return_data["source"])
         for key, val in scraped_dict.items():
@@ -277,9 +303,10 @@ class _StaticHtmlScraper(ABC):
             setattr(instance, key, val)
         return instance
 
-
     @staticmethod
-    def _html_from_url(url: str, headers: dict, session: requests.Session) -> str:
+    def _html_from_url(
+        url: str, headers: dict, session: requests.Session
+    ) -> str:
         """Return HTML from requested URL"""
         if isinstance(session, requests.Session):
             response = session.get(url, headers=headers)
@@ -297,19 +324,31 @@ class _StaticHtmlScraper(ABC):
     def _validate_scrape(self, json_dict: str) -> JSONDict:
         """Raise exceptions if the scrape did not properly execute"""
         json_type = determine_json_type(json_dict)
-        if json_type == "LoginAndSignupPage" and not type(self).__name__ == "LoginAndSignupPage":
+        if (
+            json_type == "LoginAndSignupPage"
+            and not type(self).__name__ == "LoginAndSignupPage"
+        ):
             raise InstagramLoginRedirectError
-        elif json_type == "HttpErrorPage" and not type(self).__name__ == "HttpErrorPage":
+        elif (
+            json_type == "HttpErrorPage"
+            and not type(self).__name__ == "HttpErrorPage"
+        ):
             source_str = self.url if hasattr(self, "url") else "Source"
-            raise ValueError(f"{source_str} is not a valid Instagram page. Please provide a valid argument.")
+            raise ValueError(
+                f"{source_str} is not a valid Instagram page. Please provide a valid argument."
+            )
 
     @staticmethod
     def _determine_string_type(string_data: str) -> str:
         """Match and return string representation of appropriate source"""
-        string_type_map = [("https://", "url"), ("window._sharedData", "html"), ('{"config"', "JSON dict str")]
+        string_type_map = [
+            ("https://", "url"),
+            ("window._sharedData", "html"),
+            ('{"config"', "JSON dict str"),
+        ]
         for substr, str_type in string_type_map:
             if substr in string_data:
-                #BUG: !DOCTYPE isnt returned in selenium source code, use </html> as secondary identifier instead
+                # BUG: !DOCTYPE isnt returned in selenium source code, use </html> as secondary identifier instead
                 if substr == "https://" and "!DOCTYPE" in string_data:
                     continue
                 break

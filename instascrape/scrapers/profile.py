@@ -10,6 +10,7 @@ from instascrape.core._mappings import _PostMapping, _ProfileMapping
 from instascrape.core._static_scraper import _StaticHtmlScraper
 from instascrape.scrapers.post import Post
 
+
 class Profile(_StaticHtmlScraper):
     """Scraper for an Instagram profile page"""
 
@@ -36,9 +37,9 @@ class Profile(_StaticHtmlScraper):
             )
         posts = []
         try:
-            post_arr = self.json_dict["entry_data"]["ProfilePage"][0]["graphql"]["user"][
-                "edge_owner_to_timeline_media"
-            ]["edges"]
+            post_arr = self.json_dict["entry_data"]["ProfilePage"][0][
+                "graphql"
+            ]["user"]["edge_owner_to_timeline_media"]["edges"]
         except TypeError:
             raise ValueError(
                 "Can't return posts without first scraping the Profile. Call the scrape method on your object first."
@@ -54,7 +55,16 @@ class Profile(_StaticHtmlScraper):
             posts.append(post)
         return posts
 
-    def get_posts(self, webdriver, amount=None, login_first=False, login_pause=60, max_failed_scroll=300, scrape=False, scrape_pause=5):
+    def get_posts(
+        self,
+        webdriver,
+        amount=None,
+        login_first=False,
+        login_pause=60,
+        max_failed_scroll=300,
+        scrape=False,
+        scrape_pause=5,
+    ):
         """
         Return Post objects from profile scraped using a webdriver (not included)
 
@@ -83,7 +93,9 @@ class Profile(_StaticHtmlScraper):
         """
 
         JS_SCROLL_SCRIPT = "window.scrollTo(0, document.body.scrollHeight); var lenOfPage=document.body.scrollHeight; return lenOfPage;"
-        JS_PAGE_LENGTH_SCRIPT = "var lenOfPage=document.body.scrollHeight; return lenOfPage;"
+        JS_PAGE_LENGTH_SCRIPT = (
+            "var lenOfPage=document.body.scrollHeight; return lenOfPage;"
+        )
 
         # Determine how many posts are available on the page
         try:
@@ -91,7 +103,9 @@ class Profile(_StaticHtmlScraper):
             if amount is None:
                 amount = posts_len
             if amount > posts_len:
-                raise ValueError(f"{amount} posts requested but {self.username} only has {posts_len} posts")
+                raise ValueError(
+                    f"{amount} posts requested but {self.username} only has {posts_len} posts"
+                )
         except AttributeError:
             raise AttributeError(f"{type(self)} must be scraped first")
 
@@ -140,7 +154,9 @@ class Profile(_StaticHtmlScraper):
         scraped_posts = []
         if scrape:
             for post in posts:
-                scraped_posts.append(post.scrape(inplace=False, webdriver=webdriver))
+                scraped_posts.append(
+                    post.scrape(inplace=False, webdriver=webdriver)
+                )
                 time.sleep(scrape_pause)
             posts = scraped_posts
 
@@ -152,10 +168,11 @@ class Profile(_StaticHtmlScraper):
 
         soup = BeautifulSoup(source_data, features="lxml")
         anchor_tags = soup.find_all("a")
-        post_tags = [tag for tag in anchor_tags if tag.find(
-            "div", {"class": "eLAPa"})]
+        post_tags = [
+            tag for tag in anchor_tags if tag.find("div", {"class": "eLAPa"})
+        ]
 
-        #Filter new posts that have not been stored yet
+        # Filter new posts that have not been stored yet
         new_posts = [tag for tag in post_tags if tag not in post_soup]
         post_soup += new_posts
 
